@@ -185,6 +185,20 @@ app.post('/movimientos/salida', requiereAuth, requiereRol('armero', 'admin'), as
   }
 });
 
+// Todos los movimientos (abiertos y cerrados) - para historial y consulta de consumo
+app.get('/movimientos', requiereAuth, async (req, res) => {
+  const { estado } = req.query;
+  const { rows } = await pool.query(
+    estado
+      ? `SELECT m.*, p.nombre AS responsable, p.unidad FROM movimientos m
+         JOIN personal p ON p.id = m.personal_id WHERE m.estado = $1 ORDER BY m.fecha_salida DESC`
+      : `SELECT m.*, p.nombre AS responsable, p.unidad FROM movimientos m
+         JOIN personal p ON p.id = m.personal_id ORDER BY m.fecha_salida DESC`,
+    estado ? [estado] : []
+  );
+  res.json(rows);
+});
+
 // Movimientos abiertos (pendientes de retorno)
 app.get('/movimientos/abiertos', requiereAuth, async (req, res) => {
   const { rows } = await pool.query(`
